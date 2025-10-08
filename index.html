@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Zenith - Interactive Sparkle Trail</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Set up custom styles for a luxurious bright theme --><style>
+        /* Use Inter font for a modern, clean look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        :root {
+            --sparkle-white: #FFFFFF; /* White for sparkles */
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            /* CHANGED: Removed explicit background color. It is now clear/transparent. */
+            /* If the environment has a default background (like white), the sparkles will show over it. */
+        }
+
+        /* Container holds the canvas and ensures it covers the background */
+        .parallax-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            /* Canvas background is transparent */
+            background-color: transparent; 
+            z-index: 0;
+        }
+
+        /* Canvas will render the sparkles */
+        #sparkle-canvas {
+            display: block;
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sparkle Background Container --><div class="parallax-container" id="parallax-bg">
+        <canvas id="sparkle-canvas"></canvas>
+    </div>
+
+    <!-- REMOVED: Main Content Overlay (The Zenith title, paragraph, and button) -->
+
+    <script>
+        // --- Canvas and Particle Setup ---
+        const container = document.getElementById('parallax-bg');
+        const canvas = document.getElementById('sparkle-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let particles = [];
+        let mouse = { x: 0, y: 0 };
+        
+        const SPARKLE_COLOR = '#FFFFFF'; // White for the sparkles 
+        
+        // Function to handle canvas resizing
+        function resizeCanvas() {
+            // Set canvas dimensions directly using client width/height
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        // --- Particle Class for Sparkle Effect ---
+        class Sparkle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                // Add slight random velocity for scattering
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                
+                this.alpha = 1;
+                this.radius = Math.random() * 1.8 + 0.8; // Small, subtle sparkles
+                this.color = SPARKLE_COLOR;
+            }
+
+            // Update particle position and fading
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.03; // Quick fade out for the follow effect
+                this.radius *= 0.98; // Shrink slightly
+            }
+
+            // Draw the particle with a glow
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10; // Adds the glow
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // --- Event Listeners and Animation Loop ---
+
+        // Update mouse position
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. FIX: Clear the canvas completely every frame (removes the trail effect)
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            // 2. Add new sparkles near the mouse position
+            // We add 3 particles per frame for a dense, continuous sparkle follow
+            if (mouse.x !== 0 || mouse.y !== 0) { // Only generate if mouse has moved
+                for (let i = 0; i < 3; i++) {
+                    particles.push(new Sparkle(
+                        mouse.x + (Math.random() - 0.5) * 10, // Small random offset
+                        mouse.y + (Math.random() - 0.5) * 10
+                    ));
+                }
+            }
+
+            // 3. Update and draw existing particles
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                
+                // Remove particles that have faded or shrunk too much
+                if (p.alpha < 0.05 || p.radius < 0.2) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        // Start animation loop when window loads
+        window.onload = animate;
+    </script>
+
+</body>
+</html>
