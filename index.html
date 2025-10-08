@@ -17,8 +17,8 @@
             margin: 0;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
-            /* CHANGED: Removed explicit background color. It is now clear/transparent. */
-            /* If the environment has a default background (like white), the sparkles will show over it. */
+            /* EDITED: Set background explicitly to black */
+            background-color: #000000;
         }
 
         /* Container holds the canvas and ensures it covers the background */
@@ -71,12 +71,13 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                // Add slight random velocity for scattering
-                this.vx = (Math.random() - 0.5) * 1.5;
-                this.vy = (Math.random() - 0.5) * 1.5;
+                // EDITED: Drastically reduced velocity (from 2.0 to 0.2) for near-stationary floating
+                this.vx = (Math.random() - 0.5) * 0.2; 
+                this.vy = (Math.random() - 0.5) * 0.2;
                 
                 this.alpha = 1;
-                this.radius = Math.random() * 1.8 + 0.8; // Small, subtle sparkles
+                // Kept radius for bigger sparkles (1.5-3.5)
+                this.radius = Math.random() * 2 + 1.5; 
                 this.color = SPARKLE_COLOR;
             }
 
@@ -84,20 +85,24 @@
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.alpha -= 0.03; // Quick fade out for the follow effect
-                this.radius *= 0.98; // Shrink slightly
+                // EDITED: Drastically reduced fade rate (from 0.015 to 0.005) for a very long lifespan (twinkling)
+                this.alpha -= 0.005; 
+                this.radius *= 0.99; // Shrink very slightly
             }
 
-            // Draw the particle with a glow
+            // Draw the particle with the original circle shape
             draw() {
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.fillStyle = this.color;
                 ctx.shadowColor = this.color;
                 ctx.shadowBlur = 10; // Adds the glow
+                
+                // Drawing a circle (arc)
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
+                
                 ctx.restore();
             }
         }
@@ -119,18 +124,26 @@
             // 1. FIX: Clear the canvas completely every frame (removes the trail effect)
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             
-            // 2. Add new sparkles near the mouse position
-            // We add 3 particles per frame for a dense, continuous sparkle follow
+            // 2. Generate a gentle cluster of particles near the mouse (like following lights)
             if (mouse.x !== 0 || mouse.y !== 0) { // Only generate if mouse has moved
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < 2; i++) { // Generate slightly fewer per frame
+                    // Reduced scatter to 15 for a gentle cluster
                     particles.push(new Sparkle(
-                        mouse.x + (Math.random() - 0.5) * 10, // Small random offset
-                        mouse.y + (Math.random() - 0.5) * 10
+                        mouse.x + (Math.random() - 0.5) * 15, 
+                        mouse.y + (Math.random() - 0.5) * 15
                     ));
                 }
             }
 
-            // 3. Update and draw existing particles
+            // 3. NEW: Randomly generate background 'twinkle' particles for the fairy light effect
+            if (Math.random() < 0.3) { // ~30% chance per frame to generate one random particle
+                particles.push(new Sparkle(
+                    Math.random() * canvas.width, 
+                    Math.random() * canvas.height
+                ));
+            }
+
+            // 4. Update and draw existing particles
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
                 p.update();
